@@ -1,0 +1,37 @@
+name: Build RootFs-Windroid
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v2
+
+      - name: Build da imagem Docker
+        run: |
+          docker build -t windroid-rootfs:latest .
+
+      - name: Criar e exportar RootFS
+        run: |
+          # Cria um container a partir da imagem construída
+          container_id=$(docker create windroid-rootfs:latest)
+          echo "Container criado: $container_id"
+          # Exporta a rootfs para um arquivo tar
+          docker export $container_id -o rootfs.tar
+          # Remove o container temporário
+          docker rm $container_id
+
+      - name: Upload do artifact da RootFS
+        uses: actions/upload-artifact@v2
+        with:
+          name: rootfs
+          path: rootfs.tar
